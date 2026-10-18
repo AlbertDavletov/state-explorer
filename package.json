@@ -1,0 +1,29 @@
+{
+  "name": "state-explorer",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "test": "npm run build && node --import tsx --test packages/core/test/*.test.ts packages/react/test/*.test.tsx",
+    "typecheck": "npm run build && tsc --project tsconfig.json",
+    "build": "tsc --project packages/core/tsconfig.json && tsc --project packages/react/tsconfig.json",
+    "example": "npm run build && tsx examples/demo/render.tsx",
+    "test:browser": "npm run example && node --import tsx --test packages/react/test/*.browser.ts",
+    "check:packages": "npm run build && node scripts/check-packages.mjs"
+  },
+  "devDependencies": {
+    "@types/d3-time": "3.0.4",
+    "@types/node": "24.13.4",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "esbuild": "0.28.2",
+    "playwright": "1.63.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "tsx": "4.23.13",
+    "typescript": "5.9.3"
+  }
+}

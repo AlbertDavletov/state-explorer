@@ -1,0 +1,16 @@
+{
+  "name": "@state-explorer/react",
+  "license": "MIT",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" }
+  },
+  "files": ["dist"],
+  "dependencies": {
+    "@state-explorer/core": "0.0.0",
+    "d3-time": "3.1.0"
+  },
+  "peerDependencies": { "react": "^18.0.0 || ^19.0.0" }
+}
