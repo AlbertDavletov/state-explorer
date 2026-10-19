@@ -99,12 +99,20 @@ temporary consumer, and checks TypeScript, bundling and browser behavior with
 React 18 and 19. It requires registry access or cached dependencies and does not
 publish anything. Generated builds and dependencies are ignored.
 
+[GitHub CI](.github/workflows/ci.yml) runs the same source and package checks on
+pull requests and `main`, using Node.js 24 on Ubuntu and Playwright's Chromium.
+The existing browser checks exercise overview movement, both resize edges,
+controlled viewport behavior and state inspection at narrow and wide widths.
+The package check copies the actual README Quick Start into isolated React 18
+and 19 consumers and exercises its navigator at 1000 and 360 pixels.
+
 ## Limits
 
 Packages emit ES2022 ESM with declarations and support package-root imports only.
 The renderer needs ResizeObserver, Pointer Events and SVG; no polyfills ship.
 Browser checks currently target Chromium/Edge. Other browser engines and real
 NVDA, JAWS and VoiceOver use remain unvalidated.
+Physical touch use and large-data performance have not been validated.
 
 Overlaps paint in input order without conflict resolution. Tiny intervals can be
 difficult pointer targets but remain keyboard-inspectable. Long labels may clip;
