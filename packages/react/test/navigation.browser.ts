@@ -71,6 +71,7 @@ async function plot(page: Page) {
 
 async function wheelAt(page: Page, x: number, y: number, delta: number, shift = false) {
   await page.mouse.move(x, y);
+  const requests = Number(await page.getByLabel("Request", { exact: true }).getAttribute("data-count"));
   await page.evaluate(() => {
     delete document.body.dataset.wheel;
     document.addEventListener("wheel", event => {
@@ -78,10 +79,16 @@ async function wheelAt(page: Page, x: number, y: number, delta: number, shift = 
     }, { once: true });
   });
   if (shift) await page.keyboard.down("Shift");
-  try { await page.mouse.wheel(0, delta); }
-  finally { if (shift) await page.keyboard.up("Shift"); }
-  await page.waitForFunction(() => document.body.dataset.wheel !== undefined);
-  return page.evaluate(() => document.body.dataset.wheel === "true");
+  try {
+    await page.mouse.wheel(0, delta);
+    await page.waitForFunction(() => document.body.dataset.wheel !== undefined);
+    const handled = await page.evaluate(() => document.body.dataset.wheel === "true");
+    // Native delivery can finish before React commits the controlled parent's update.
+    // Keep modifiers held through delivery and observe that commit before the next gesture.
+    if (handled) await page.waitForFunction(previous =>
+      Number(document.querySelector('[aria-label="Request"]')?.getAttribute("data-count")) > previous, requests);
+    return handled;
+  } finally { if (shift) await page.keyboard.up("Shift"); }
 }
 
 async function wheel(page: Page, delta: number, anchor = 0.25, shift = false) {
