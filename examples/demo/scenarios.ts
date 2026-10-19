@@ -19,8 +19,6 @@ type DemoState = keyof typeof appearances;
 interface Scenario {
   id: string;
   title: string;
-  description: string;
-  hint: string;
   states: DemoState[];
   entities: Entity[];
   intervals: StateInterval<DemoState>[];
@@ -36,8 +34,6 @@ const interval = (entityId: string, start: number, end: number, state: DemoState
 export const scenarios: Scenario[] = [
   {
     id: "services", title: "Service health",
-    description: "Follow a short disruption across four services, from degradation to recovery.",
-    hint: "Inspect API's first interval: it began before this window. Search has a reporting gap at 11:10–11:25; the pale track is missing data, not a health state.",
     states: ["healthy", "degraded", "down"],
     entities: [{ id: "api", label: "API" }, { id: "auth", label: "Authentication" },
       { id: "payments", label: "Payments" }, { id: "search", label: "Search" }],
@@ -52,8 +48,6 @@ export const scenarios: Scenario[] = [
   },
   {
     id: "builds", title: "Build pipelines",
-    description: "Compare four release pipelines as they queue, build, test and deploy.",
-    hint: "API fails its first build and retries. Pan later to see its deployment after 12:00. Adjacent phases share a boundary without sharing an instant.",
     states: ["queued", "building", "testing", "deployed", "failed"],
     entities: [{ id: "web", label: "Web" }, { id: "api", label: "API" },
       { id: "worker", label: "Worker" }, { id: "mobile", label: "Mobile" }],
@@ -70,8 +64,6 @@ export const scenarios: Scenario[] = [
   },
   {
     id: "devices", title: "Device states",
-    description: "Explore connectivity and planned maintenance across three field devices.",
-    hint: "Device B reconnects twice. Device C has no reported state at 10:45–11:05; missing data is left as a gap rather than labelled offline.",
     states: ["online", "offline", "maintenance"],
     entities: [{ id: "a", label: "Device A" }, { id: "b", label: "Device B" }, { id: "c", label: "Device C" }],
     intervals: [

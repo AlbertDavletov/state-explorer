@@ -1,22 +1,21 @@
 # @state-explorer/core
 
 Framework-independent types, time validation and normalized timeline projection.
-No runtime dependencies, React, DOM or pixel coordinates. This is currently a
-private, unpublished package at `0.0.0` emitting ES2022 ESM and TypeScript declarations.
-See the [repository setup](https://github.com/AlbertDavletov/state-explorer#try-the-demo) to build it locally.
+No runtime dependencies, React, DOM or pixel coordinates. The package emits ES2022
+ESM and TypeScript declarations and remains private and unpublished at `0.0.0`.
 
 ## Local artifact installation
 
-Given a built package tarball, install it into your application's directory:
+From a [repository checkout](https://github.com/AlbertDavletov/state-explorer#try-the-demo),
+run `npm ci`, `npm run build`, then `npm pack --workspace @state-explorer/core`.
+Install the resulting tarball into your application's directory:
 
 ```sh
 npm install /path/to/state-explorer-core-0.0.0.tgz
 ```
 
 Only package-root ESM imports are supported. Use TypeScript with `NodeNext` or
-`Bundler` module resolution. Core has no Node runtime requirement. To produce
-artifacts from a checkout, run `npm ci`, `npm run build`, then
-`npm pack --workspace @state-explorer/core`. No npm publication is available yet.
+`Bundler` module resolution. Core has no Node runtime requirement.
 
 ## Data model
 
