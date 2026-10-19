@@ -23,7 +23,7 @@ const hidden = { position: "absolute", width: 1, height: 1, overflow: "hidden",
 const modes: NavigatorAction[] = ["move", "start", "end"];
 const names = { move: "Move viewport", start: "Resize viewport start", end: "Resize viewport end" };
 
-/** Internal raw SVG overview. It never owns a viewport or a semantic selection. */
+/** Internal raw SVG overview; the parent owns the viewport. */
 export function OverviewNavigator<TEntity extends Entity, TInterval extends StateInterval<unknown>>({
   entities, intervals, domain, viewport, width, labelWidth, plotWidth, label, onViewportChange, getStateAppearance,
 }: Props<TEntity, TInterval>) {

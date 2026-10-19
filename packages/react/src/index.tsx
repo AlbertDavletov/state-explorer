@@ -65,7 +65,6 @@ export function StateTimeline<TEntity extends Entity, TInterval extends StateInt
     if (!onViewportChange || plotWidth <= 0) return;
     const svg = svgRef.current!;
     const wheel = (event: WheelEvent) => {
-      if (!onViewportChange) return;
       if (event.defaultPrevented || !event.cancelable || event.ctrlKey || event.metaKey || event.altKey) return;
       const point = pointerPosition(event.clientX, event.clientY);
       if (!point?.inside) return;

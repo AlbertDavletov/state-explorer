@@ -7,7 +7,10 @@ React owns the DOM; `@state-explorer/core` validates and projects the data.
 
 Both State Explorer packages remain **private and unpublished at `0.0.0`**.
 React `^18.0.0 || ^19.0.0` is a peer dependency supplied by your application.
-Install both supplied tarballs together so the exact core dependency resolves locally:
+From a checkout, run `npm ci`, `npm run build`, then
+`npm pack --workspace @state-explorer/core --workspace @state-explorer/react`.
+Build first: packing does not compile sources. Install the resulting tarballs
+together in your application so the exact core dependency resolves locally:
 
 ```sh
 npm install /path/to/state-explorer-core-0.0.0.tgz /path/to/state-explorer-react-0.0.0.tgz
@@ -18,15 +21,10 @@ For example: `npm install react@18 react-dom@18` (or both at 19). TypeScript app
 need the matching major of `@types/react` and `@types/react-dom`. Use `NodeNext` or
 `Bundler` module resolution; only package-root ESM imports are supported.
 
-To produce tarballs from a checkout: `npm ci`, `npm run build`, then
-`npm pack --workspace @state-explorer/core --workspace @state-explorer/react`.
-Build first: packing does not compile sources. No npm account is needed.
-
 Output targets ES2022. The browser must supply `ResizeObserver`, Pointer Events,
-SVG and modern keyboard events; no polyfills are included. External TypeScript
-5.9.3/esbuild 0.28.2 applications are exercised by `npm run check:packages`
-with React/React DOM 18.3.1 and 19.3.0. Other evergreen browsers are intended targets,
-but have not been validated here. There is no Node runtime or `engines` requirement.
+SVG and modern keyboard events; no polyfills are included. Package checks exercise
+React 18 and 19 in Chromium; local Edge checks are also supported. Other browser
+engines remain unvalidated. There is no Node runtime or `engines` requirement.
 
 Minimal controlled component (mount it with your application's React root):
 
@@ -68,10 +66,8 @@ from `@state-explorer/core`, not a React re-export.
 
 `StateAppearance` is `{ fill: string; label: string }`: an SVG fill color and a
 human-readable state label. State meaning, labels and colors belong to the app.
-For example, the Quick Start uses
-`getStateAppearance={interval => appearance[interval.state]}`. The callback may
-also use entity or interval metadata to derive a label. Arbitrary metadata is not
-serialized into the tooltip. There is no custom tooltip, overlay or theme API.
+The callback may use entity or interval metadata to derive a label. Arbitrary
+metadata is not serialized into the tooltip. There is no custom tooltip, overlay or theme API.
 
 Give the component's parent its intended width; no sizing prop is needed.
 The SVG fills that width and measures with `ResizeObserver`. Before measurement
@@ -101,7 +97,7 @@ Supply `domain` separately from `viewport` to show the raw full-history overview
 The same `entities`, `intervals` and appearance callback are projected against
 that fixed domain. Include the complete history you want shown; the component
 does not fetch intervals. Gaps and overlaps retain the existing core semantics.
-Omitting `domain` preserves the previous detail-only behavior.
+Omitting `domain` renders only the detail view.
 
 The domain must have a finite positive duration and contain the supplied
 viewport; invalid props throw `RangeError`. External viewport values are never
@@ -120,9 +116,8 @@ the gesture limit, never the accepted viewport.
 
 Every pointer delta uses the latest supplied viewport. Rejection leaves both
 views unchanged; transformed or externally updated values become the baseline
-for the next delta. Pending requests are not accumulated. This means an
-asynchronous parent may accept less movement than an immediately updating parent;
-immediate updates are recommended for continuous dragging.
+for the next delta. An asynchronous parent may accept less movement than an
+immediately updating parent; immediate updates are recommended for continuous dragging.
 Escape, lost capture, pointer cancellation, blur, domain/size changes or removing
 navigation stop the drag. Accepted changes remain; cancellation does not request
 an undo. The navigator changes only the controlled viewport.
@@ -201,4 +196,5 @@ is provided. Tiny intervals are keyboard-inspectable; pointer geometry stays tru
 errors propagate; see the [core contract](https://github.com/AlbertDavletov/state-explorer/blob/main/packages/core/README.md).
 
 Implementation math and formatting helpers are internal, not package entry points.
-No performance or cross-browser support guarantees are provided. Licensed under [MIT](LICENSE).
+Physical touch and large-data performance remain unvalidated; no performance or
+cross-browser support guarantees are provided. Licensed under [MIT](LICENSE).

@@ -11,7 +11,11 @@ the React package renders responsive SVG. Both packages are **experimental and
 unpublished**, with version `0.0.0` and `private: true`. This repository is a source
 publication; the package names are not yet available to install from npm.
 
-![Actual demo: service health histories with a full-history overview navigator](docs/images/demo.png)
+![Recorded demo: move the overview window, resize its end, then inspect an API state](docs/images/demo.gif)
+
+Start with the full history, move the blue viewport window to another period,
+resize its right edge to zoom, then hover a detail interval to inspect its state
+and original time bounds. The recording uses the real local demo.
 
 ## Try the demo
 
@@ -24,10 +28,9 @@ npm ci
 npm run example
 ```
 
-Open `examples/demo/dist/index.html` in a browser. Switch between service health,
-build pipelines and device states. Drag the overview window to pan or either edge
-to zoom, then hover or keyboard-focus an interval to inspect it. No server or
-external data source is needed. See the [demo guide](examples/demo/README.md).
+Open `examples/demo/dist/index.html` in a browser. Service health, build pipelines
+and device states use the same component. No server or external data source is
+needed. See the [demo guide](examples/demo/README.md).
 
 ## Quick Start
 
@@ -92,34 +95,22 @@ npm run test:browser
 npm run check:packages
 ```
 
-For browser checks, first run `npx playwright install chromium`, or
+First run `npx playwright install chromium`, or
 [select installed Microsoft Edge](examples/demo/README.md#browser-checks).
-`check:packages` builds and packs both packages, installs them in an external
-temporary consumer, and checks TypeScript, bundling and browser behavior with
-React 18 and 19. It requires registry access or cached dependencies and does not
-publish anything. Generated builds and dependencies are ignored.
-
-[GitHub CI](.github/workflows/ci.yml) runs the same source and package checks on
-pull requests and `main`, using Node.js 24 on Ubuntu and Playwright's Chromium.
-The existing browser checks exercise overview movement, both resize edges,
-controlled viewport behavior and state inspection at narrow and wide widths.
-The package check copies the actual README Quick Start into isolated React 18
-and 19 consumers and exercises its navigator at 1000 and 360 pixels.
+[GitHub CI](.github/workflows/ci.yml) runs these checks on pull requests and `main`
+using Node.js 24, Ubuntu and Chromium. `check:packages` installs local tarballs in
+isolated React 18/19 consumers and exercises the copied README Quick Start at
+1000/360px, including viewport movement, both resize edges and inspection.
+It requires registry access or cached dependencies; it does not publish.
 
 ## Limits
 
-Packages emit ES2022 ESM with declarations and support package-root imports only.
-The renderer needs ResizeObserver, Pointer Events and SVG; no polyfills ship.
-Browser checks currently target Chromium/Edge. Other browser engines and real
-NVDA, JAWS and VoiceOver use remain unvalidated.
-Physical touch use and large-data performance have not been validated.
-
-Overlaps paint in input order without conflict resolution. Tiny intervals can be
-difficult pointer targets but remain keyboard-inspectable. Long labels may clip;
-tooltips may extend below the chart or be clipped by overflow ancestors. See the
-[detailed limitations](packages/react/README.md#accessibility-and-limits).
-There is no aggregation, virtualization, touch-pinch navigation, event overlay,
-data fetching or backend integration.
+Packages emit ES2022 ESM for modern browsers, without polyfills. Other browser
+engines, real screen readers, physical touch and large-data performance remain
+unvalidated. Overlaps paint in input order; tiny pointer targets, clipped labels
+and tooltip edge/overflow clipping remain limitations. See the
+[React contracts and limits](packages/react/README.md#accessibility-and-limits).
+There is no aggregation, virtualization, touch-pinch navigation or data backend.
 
 ## Background
 
