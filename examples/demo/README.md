@@ -13,7 +13,7 @@ npm run example
 ```
 
 Open `examples/demo/dist/index.html`. Re-run after edits. The local bundle needs
-no server or network data and uses private, unpublished workspace packages.
+no server or network data and uses workspace packages built from this checkout.
 
 ## Explore
 

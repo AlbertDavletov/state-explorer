@@ -5,15 +5,29 @@ React owns the DOM; `@state-explorer/core` validates and projects the data.
 
 ## Installation status
 
-Both State Explorer packages remain **private and unpublished at `0.0.0`**.
+**Publication status: 0.1.0 is prepared but not yet published to npm.**
+
+Install this package with `@state-explorer/core` for the timeline, full-history
+overview and controlled viewport navigation.
+
+Intended npm command (use only after publication):
+
+```sh
+npm install @state-explorer/core@0.1.0 @state-explorer/react@0.1.0
+```
+
 React `^18.0.0 || ^19.0.0` is a peer dependency supplied by your application.
+
+### Local tarball installation
+
 From a checkout, run `npm ci`, `npm run build`, then
 `npm pack --workspace @state-explorer/core --workspace @state-explorer/react`.
 Build first: packing does not compile sources. Install the resulting tarballs
-together in your application so the exact core dependency resolves locally:
+together in your application so the compatible core dependency resolves from
+the local archive:
 
 ```sh
-npm install /path/to/state-explorer-core-0.0.0.tgz /path/to/state-explorer-react-0.0.0.tgz
+npm install /path/to/state-explorer-core-0.1.0.tgz /path/to/state-explorer-react-0.1.0.tgz
 ```
 
 Your app also needs React and a renderer such as `react-dom` of the same major.
