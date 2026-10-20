@@ -17,6 +17,12 @@ const node = (args, cwd) => execFileSync(process.execPath, args, { cwd, encoding
 console.log(`Artifacts and evidence: ${temporary}`);
 const packed = JSON.parse(npm(["pack", "--json", "--pack-destination", temporary,
   "--workspace", "@state-explorer/core", "--workspace", "@state-explorer/react"]));
+const dryRun = JSON.parse(npm(["pack", "--dry-run", "--json",
+  "--workspace", "@state-explorer/core", "--workspace", "@state-explorer/react"]));
+const inventory = artifacts => artifacts.map(({ name, version, files }) => ({
+  name, version, files: files.map(file => file.path),
+}));
+assert.deepEqual(inventory(dryRun), inventory(packed), "Dry-run inventory must match the actual tarballs");
 for (const artifact of packed) {
   assert.ok(artifact.files.some(file => file.path === "dist/index.js"));
   assert.ok(artifact.files.some(file => file.path === "dist/index.d.ts"));
@@ -26,6 +32,7 @@ for (const artifact of packed) {
   assert.ok(!artifact.files.some(file => /^dist\/selection\./.test(file.path)), "Stale selection outputs must not be packed");
 }
 await writeFile(join(temporary, "pack.json"), JSON.stringify(packed, null, 2));
+await writeFile(join(temporary, "pack-dry-run.json"), JSON.stringify(dryRun, null, 2));
 console.log(packed.map(p => ({ name: p.name, bytes: p.size, unpackedBytes: p.unpackedSize, files: p.files.map(f => f.path) })));
 const browser = await chromium.launch({ ...(process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {}) });
 console.log(`Browser: ${browser.version()}`);
@@ -43,6 +50,18 @@ try {
     for (const name of ["@state-explorer/core", "@state-explorer/react", "react", "react-dom"]) {
       const installed = await realpath(join(consumer, "node_modules", name));
       assert.ok(installed.startsWith(consumer + sep), installed);
+    }
+    const lock = JSON.parse(await readFile(join(consumer, "package-lock.json"), "utf8"));
+    for (const artifact of packed) {
+      const installed = lock.packages[`node_modules/${artifact.name}`];
+      assert.equal(installed.version, artifact.version);
+      assert.equal(installed.integrity, artifact.integrity, "Consumer must install the exact packed archive");
+      assert.ok(installed.resolved.startsWith("file:") && !installed.link, "Packages must resolve to local tarballs, not workspace links");
+      const manifest = JSON.parse(await readFile(join(consumer, "node_modules", artifact.name, "package.json"), "utf8"));
+      assert.notEqual(manifest.private, true);
+      assert.equal(manifest.publishConfig.access, "public");
+      assert.equal(manifest.license, "MIT");
+      assert.deepEqual(Object.keys(manifest.exports), ["."]);
     }
     console.log(npm(["ls", "@state-explorer/core", "react", "react-dom"], consumer));
     await writeFile(join(consumer, "client.tsx"), await readFile(new URL("./fixtures/consumer.tsx", import.meta.url)));
@@ -83,7 +102,8 @@ try {
     node(["build.mjs"], consumer);
     const meta = JSON.parse(await readFile(join(consumer, "meta.json"), "utf8"));
     assert.ok(Object.keys(meta.inputs).every(path => !path.startsWith("..") && !path.includes("state-explorer/packages")));
-    assert.ok(Object.keys(meta.inputs).some(path => path.includes("node_modules/@state-explorer/core/dist/index.js")));
+    const coreEntries = inputs => Object.keys(inputs).filter(path => path.endsWith("@state-explorer/core/dist/index.js"));
+    assert.deepEqual(coreEntries(meta.inputs), ["node_modules/@state-explorer/core/dist/index.js"], "React and the consumer must share the packed core");
     await writeFile(join(consumer, "index.html"), '<!doctype html><html lang="en"><meta charset="utf-8"><title>External consumer</title><div id="root"></div><script src="app.js"></script></html>');
     const page = await browser.newPage({ viewport: { width: 1000, height: 800 } });
     const errors = [];
@@ -165,6 +185,7 @@ try {
     await page.close();
     const quickMeta = JSON.parse(await readFile(join(consumer, "quick-meta.json"), "utf8"));
     assert.ok(Object.keys(quickMeta.inputs).every(path => !path.startsWith("..") && !path.includes("state-explorer/packages")));
+    assert.deepEqual(coreEntries(quickMeta.inputs), ["node_modules/@state-explorer/core/dist/index.js"]);
     await writeFile(join(consumer, "quick.html"), '<!doctype html><html lang="en"><meta charset="utf-8"><title>README Quick Start</title><div id="root"></div><script src="quick.js"></script></html>');
     for (const width of [1000, 360]) {
       const quickPage = await browser.newPage({ viewport: { width, height: 900 } });
@@ -201,7 +222,10 @@ try {
       assert.ok(await value("end") < movedEnd);
       assert.equal(await value("start"), resizedStart);
       await quickPage.getByRole("img").first().hover();
-      await quickPage.getByRole("tooltip", { includeHidden: true }).waitFor();
+      const inspection = quickPage.getByRole("tooltip", { includeHidden: true });
+      await inspection.waitFor();
+      assert.match(await inspection.innerText(), /State: Degraded/);
+      assert.match(await inspection.innerText(), /Original start: 2026-09-10 10:00:00 UTC/);
       await quickPage.screenshot({ path: join(temporary, `quick-start-${width}-react-${version}.png`) });
       assert.deepEqual(errors, []);
       await quickPage.close();

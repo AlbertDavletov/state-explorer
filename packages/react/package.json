@@ -1,16 +1,41 @@
 {
   "name": "@state-explorer/react",
+  "version": "0.1.0",
+  "description": "React SVG timelines with a controlled full-history overview navigator and state inspection.",
+  "keywords": [
+    "react",
+    "timeline",
+    "state-history",
+    "svg"
+  ],
   "license": "MIT",
-  "version": "0.0.0",
-  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AlbertDavletov/state-explorer.git",
+    "directory": "packages/react"
+  },
+  "homepage": "https://github.com/AlbertDavletov/state-explorer/tree/main/packages/react#readme",
+  "bugs": {
+    "url": "https://github.com/AlbertDavletov/state-explorer/issues"
+  },
   "type": "module",
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" }
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "dependencies": {
-    "@state-explorer/core": "0.0.0",
+    "@state-explorer/core": "^0.1.0",
     "d3-time": "3.1.0"
   },
-  "peerDependencies": { "react": "^18.0.0 || ^19.0.0" }
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }

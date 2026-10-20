@@ -7,15 +7,30 @@ aligns their histories on a shared time axis with inspection, zoom, pan and an
 overview navigator.
 
 The framework-independent TypeScript core handles validation and projection;
-the React package renders responsive SVG. Both packages are **experimental and
-unpublished**, with version `0.0.0` and `private: true`. This repository is a source
-publication; the package names are not yet available to install from npm.
+the React package renders responsive SVG. The `0.1.0` API is experimental.
+
+**Publication status: 0.1.0 is prepared but not yet published to npm.**
 
 ![Recorded demo: move the overview window, resize its end, then inspect an API state](docs/images/demo.gif)
 
 Start with the full history, move the blue viewport window to another period,
 resize its right edge to zoom, then hover a detail interval to inspect its state
 and original time bounds. The recording uses the real local demo.
+
+## Install
+
+Use `@state-explorer/react` with `@state-explorer/core` for the React timeline and
+overview navigator. Use core alone for framework-independent validation and projection.
+
+Intended npm command (use only after publication):
+
+```sh
+npm install @state-explorer/core@0.1.0 @state-explorer/react@0.1.0
+```
+
+Your app supplies React 18 or 19 and a renderer such as `react-dom` of the same
+major. To evaluate the packages now, [build and install local tarballs](packages/react/README.md#local-tarball-installation)
+or run the demo below.
 
 ## Try the demo
 
@@ -34,9 +49,8 @@ needed. See the [demo guide](examples/demo/README.md).
 
 ## Quick Start
 
-This copyable component uses the local workspace packages. The demo already
-provides React and mounting code. For another React 18 or 19 application, first
-[build and install local tarballs](packages/react/README.md#installation-status).
+Render this component in a React 18 or 19 application with both packages installed.
+The local demo already provides React and mounting code.
 
 ```tsx
 import { useState } from "react";
