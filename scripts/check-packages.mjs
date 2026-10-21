@@ -62,6 +62,10 @@ try {
       assert.equal(manifest.publishConfig.access, "public");
       assert.equal(manifest.license, "MIT");
       assert.deepEqual(Object.keys(manifest.exports), ["."]);
+      const packageReadme = await readFile(join(consumer, "node_modules", artifact.name, "README.md"), "utf8");
+      assert.match(packageReadme, /Available on npm/);
+      assert.ok(packageReadme.includes("https://albertdavletov.github.io/state-explorer/"), "Packed README must link to the live demo");
+      assert.doesNotMatch(packageReadme, /not yet published|prepared but|unpublished/i);
     }
     console.log(npm(["ls", "@state-explorer/core", "react", "react-dom"], consumer));
     await writeFile(join(consumer, "client.tsx"), await readFile(new URL("./fixtures/consumer.tsx", import.meta.url)));

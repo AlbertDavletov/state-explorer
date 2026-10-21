@@ -1,6 +1,6 @@
 {
   "name": "@state-explorer/react",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "React SVG timelines with a controlled full-history overview navigator and state inspection.",
   "keywords": [
     "react",
@@ -29,7 +29,7 @@
     "dist"
   ],
   "dependencies": {
-    "@state-explorer/core": "^0.1.0",
+    "@state-explorer/core": "^0.1.1",
     "d3-time": "3.1.0"
   },
   "peerDependencies": {

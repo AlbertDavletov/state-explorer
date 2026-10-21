@@ -9,9 +9,9 @@ aligns their histories on a shared time axis with inspection, zoom, pan and an
 overview navigator.
 
 The framework-independent TypeScript core handles validation and projection;
-the React package renders responsive SVG. The `0.1.0` API is experimental.
+the React package renders responsive SVG. The `0.1.x` API is experimental.
 
-**Publication status: 0.1.0 is available on npm.**
+**Available on npm.**
 
 ![Recorded demo: move the overview window, resize its end, then inspect an API state](docs/images/demo.gif)
 
@@ -27,7 +27,7 @@ overview navigator. Use core alone for framework-independent validation and proj
 Install from npm:
 
 ```sh
-npm install @state-explorer/core@0.1.0 @state-explorer/react@0.1.0
+npm install @state-explorer/core @state-explorer/react
 ```
 
 Your app supplies React 18 or 19 and a renderer such as `react-dom` of the same
