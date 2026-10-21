@@ -3,6 +3,8 @@
 Three illustrative domains using the public `StateTimeline` API: service health,
 build pipelines and device states.
 
+**[Open the live demo](https://albertdavletov.github.io/state-explorer/)**
+
 ## Run
 
 From a [repository checkout](../../README.md#try-the-demo):
@@ -41,6 +43,31 @@ seconds without altering the actual bounds; gaps do not infer a state.
 - [styles.css](styles.css) and [render.tsx](render.tsx): layout and local bundling.
 - [quick-start.tsx](quick-start.tsx): the root README example, checked by tests and TypeScript.
 - [record.mjs](record.mjs): manual capture of the real demo for the README.
+
+## GitHub Pages deployment
+
+The [Pages workflow](../../.github/workflows/pages.yml) builds and tests the
+production demo, then deploys only `examples/demo/dist`. It runs on pushes to
+`main` and supports a manual run from `main`; other branches and PRs cannot deploy.
+PR CI tests the production build without publishing it.
+
+In repository **Settings → Pages → Build and deployment**, select **GitHub Actions**
+as the source (already enabled for this repository). No backend or custom domain
+is required. Relative JavaScript and CSS links work under `/state-explorer/`.
+
+Build or test the deployable output locally:
+
+```sh
+npm run example:production
+npm run test:demo
+```
+
+The production build clears old demo output and minifies the bundle. `test:demo`
+serves it at `/state-explorer/` and checks wide/narrow layouts, scenario switching,
+legend, UTC readout, inspection, navigator movement, both edges and Reset view.
+Captures go to a temporary directory, outside the deployed output. To check a
+hosted build with fresh browser contexts, set `DEMO_URL` to its URL and run
+`node --import tsx --test packages/react/test/demo.browser.ts`.
 
 ## Browser checks
 

@@ -1,8 +1,11 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, rm, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
 
 const directory = new URL("./dist/", import.meta.url);
+const production = process.argv.includes("--production");
+// Rebuild only this demo output directory so old captures cannot be deployed.
+await rm(directory, { recursive: true, force: true });
 await mkdir(directory, { recursive: true });
 await build({
   entryPoints: [fileURLToPath(new URL("./client.tsx", import.meta.url))],
@@ -10,7 +13,9 @@ await build({
   bundle: true,
   format: "iife",
   platform: "browser",
-  define: { "process.env.NODE_ENV": '"development"' },
+  target: "es2022",
+  minify: production,
+  define: { "process.env.NODE_ENV": JSON.stringify(production ? "production" : "development") },
 });
 await writeFile(new URL("index.html", directory), `<!doctype html>
 <html lang="en">

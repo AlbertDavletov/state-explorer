@@ -1,12 +1,45 @@
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
+import { createServer, type Server } from "node:http";
+import { mkdtemp, readFile, readdir } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { chromium, type Browser, type Page } from "playwright";
 
 let browser: Browser;
+let server: Server | undefined;
+let demoUrl = process.env.DEMO_URL;
+let captures: string;
 before(async () => {
+  captures = await mkdtemp(join(tmpdir(), "state-explorer-demo-"));
+  console.log(`Demo captures: ${captures}`);
+  if (!demoUrl) {
+    const directory = new URL("../../../examples/demo/dist/", import.meta.url);
+    const assets = new Map([
+      ["/state-explorer/", ["index.html", "text/html"]],
+      ["/state-explorer/timeline.js", ["timeline.js", "text/javascript"]],
+      ["/state-explorer/timeline.css", ["timeline.css", "text/css"]],
+    ]);
+    assert.deepEqual((await readdir(directory)).sort(), ["index.html", "timeline.css", "timeline.js"]);
+    server = createServer(async (request, response) => {
+      const asset = assets.get(new URL(request.url!, "http://localhost").pathname);
+      if (!asset) { response.writeHead(404).end(); return; }
+      try {
+        const content = await readFile(new URL(asset[0]!, directory));
+        response.writeHead(200, { "Content-Type": asset[1]! }).end(content);
+      } catch { response.writeHead(500).end(); }
+    });
+    await new Promise<void>(resolve => server!.listen(0, "127.0.0.1", resolve));
+    const address = server.address();
+    assert.ok(address && typeof address !== "string");
+    demoUrl = `http://127.0.0.1:${address.port}/state-explorer/`;
+  }
   browser = await chromium.launch({ ...(process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {}) });
 });
-after(async () => { await browser?.close(); });
+after(async () => {
+  await browser?.close();
+  await new Promise<void>((resolve, reject) => server ? server.close(error => error ? reject(error) : resolve()) : resolve());
+});
 
 const chart = (page: Page) => page.locator('svg[role="group"]').first();
 const tooltip = (page: Page) => page.getByRole("tooltip", { includeHidden: true });
@@ -29,18 +62,28 @@ async function fixture(width: number, run: (page: Page) => Promise<void>) {
   const page = await browser.newPage({ viewport: { width, height: 900 } });
   const errors: string[] = [];
   page.on("pageerror", error => errors.push(error.message));
+  page.on("console", message => { if (message.type() === "error") errors.push(message.text()); });
+  page.on("requestfailed", request => errors.push(`${request.url()}: ${request.failure()?.errorText}`));
+  page.on("response", response => { if (response.status() >= 400) errors.push(`${response.status()}: ${response.url()}`); });
   try {
-    await page.goto(new URL("../../../examples/demo/dist/index.html", import.meta.url).href);
+    const response = await page.goto(demoUrl!);
+    assert.equal(response?.status(), 200);
     await page.getByRole("img").first().waitFor();
+    for (const [selector, attribute] of [["script[src]", "src"], ['link[rel="stylesheet"]', "href"]]) {
+      const asset = new URL((await page.locator(selector!).getAttribute(attribute!))!, page.url());
+      assert.equal(asset.origin, new URL(page.url()).origin);
+      assert.ok(asset.pathname.startsWith(new URL(page.url()).pathname), "Assets must load beneath the Pages subpath");
+    }
+    assert.equal(await page.locator("body").evaluate(node => getComputedStyle(node).backgroundColor), "rgb(244, 247, 250)");
     await run(page);
     assert.deepEqual(errors, []);
   } finally { await page.close(); }
 }
 
 const scenarios = [
-  { id: "services", title: "Service health", first: "API: Healthy", color: "#167d73", start: "09:40", count: 12 },
-  { id: "builds", title: "Build pipelines", first: "Web: Queued", color: "#94a3b8", start: "09:50", count: 16 },
-  { id: "devices", title: "Device states", first: "Device A: Online", color: "#387ab5", start: "09:30", count: 10 },
+  { id: "services", title: "Service health", first: "API: Healthy", color: "#167d73", start: "09:40", count: 12, legend: ["Healthy", "Degraded", "Down"] },
+  { id: "builds", title: "Build pipelines", first: "Web: Queued", color: "#94a3b8", start: "09:50", count: 16, legend: ["Queued", "Building", "Testing", "Deployed", "Failed"] },
+  { id: "devices", title: "Device states", first: "Device A: Online", color: "#387ab5", start: "09:30", count: 10, legend: ["Online", "Offline", "Maintenance"] },
 ];
 
 for (const width of [1200, 360]) test(`overview investigation path at ${width}px`, () => fixture(width, async page => {
@@ -69,13 +112,15 @@ for (const width of [1200, 360]) test(`overview investigation path at ${width}px
   await tooltip(page).waitFor();
   assert.match(await tooltip(page).innerText(), /State: .*\nOriginal start:/);
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
-  await page.screenshot({ path: `examples/demo/dist/review-path-${width}.png`, fullPage: true });
+  await page.screenshot({ path: join(captures, `review-path-${width}.png`), fullPage: true });
 }));
 for (const width of [1200, 700, 360]) for (const scenario of scenarios) {
   test(`${scenario.title} showcase works with pointer and keyboard at ${width}px`, () => fixture(width, async page => {
     await page.getByLabel("Explore a scenario").selectOption(scenario.id);
     assert.equal(await chart(page).getAttribute("aria-label"), `${scenario.title} timeline`);
     assert.equal(await page.getByRole("img").count(), scenario.count);
+    assert.deepEqual(await page.getByRole("list", { name: "State legend" }).getByRole("listitem").allTextContents(), scenario.legend);
+    assert.ok(await page.getByLabel("Visible time range", { exact: true }).isVisible());
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     const first = page.getByRole("img").first();
     assert.ok((await first.getAttribute("aria-label"))!.startsWith(scenario.first));
