@@ -9,7 +9,7 @@ overview navigator.
 The framework-independent TypeScript core handles validation and projection;
 the React package renders responsive SVG. The `0.1.0` API is experimental.
 
-**Publication status: 0.1.0 is prepared but not yet published to npm.**
+**Publication status: 0.1.0 is available on npm.**
 
 ![Recorded demo: move the overview window, resize its end, then inspect an API state](docs/images/demo.gif)
 
@@ -22,14 +22,14 @@ and original time bounds. The recording uses the real local demo.
 Use `@state-explorer/react` with `@state-explorer/core` for the React timeline and
 overview navigator. Use core alone for framework-independent validation and projection.
 
-Intended npm command (use only after publication):
+Install from npm:
 
 ```sh
 npm install @state-explorer/core@0.1.0 @state-explorer/react@0.1.0
 ```
 
 Your app supplies React 18 or 19 and a renderer such as `react-dom` of the same
-major. To evaluate the packages now, [build and install local tarballs](packages/react/README.md#local-tarball-installation)
+major. To try changes from a repository checkout, [build and install local tarballs](packages/react/README.md#local-tarball-installation)
 or run the demo below.
 
 ## Try the demo

@@ -5,11 +5,11 @@ No runtime dependencies, React, DOM or pixel coordinates. The `0.1.0` package
 emits ES2022 ESM and TypeScript declarations. For a timeline renderer with an
 overview navigator, use [@state-explorer/react](https://github.com/AlbertDavletov/state-explorer/blob/main/packages/react/README.md).
 
-**Publication status: 0.1.0 is prepared but not yet published to npm.**
+**Publication status: 0.1.0 is available on npm.**
 
 ## Installation
 
-Intended npm command (use only after publication):
+Install from npm:
 
 ```sh
 npm install @state-explorer/core@0.1.0
