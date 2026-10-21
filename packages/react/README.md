@@ -3,14 +3,14 @@
 `StateTimeline` renders discrete state intervals as a responsive SVG timeline.
 React owns the DOM; `@state-explorer/core` validates and projects the data.
 
-## Installation status
+## Installation
 
-**Publication status: 0.1.0 is prepared but not yet published to npm.**
+**Publication status: 0.1.0 is available on npm.**
 
 Install this package with `@state-explorer/core` for the timeline, full-history
 overview and controlled viewport navigation.
 
-Intended npm command (use only after publication):
+Install from npm:
 
 ```sh
 npm install @state-explorer/core@0.1.0 @state-explorer/react@0.1.0
