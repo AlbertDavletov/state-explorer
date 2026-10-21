@@ -11,6 +11,8 @@
     "typecheck": "npm run build && tsc --project tsconfig.json",
     "build": "tsc --project packages/core/tsconfig.json && tsc --project packages/react/tsconfig.json",
     "example": "npm run build && tsx examples/demo/render.tsx",
+    "example:production": "npm run build && tsx examples/demo/render.tsx --production",
+    "test:demo": "npm run example:production && node --import tsx --test packages/react/test/demo.browser.ts",
     "test:browser": "npm run example && node --import tsx --test packages/react/test/*.browser.ts",
     "check:packages": "npm run build && node scripts/check-packages.mjs"
   },
