@@ -1,6 +1,6 @@
 {
   "name": "@state-explorer/core",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Framework-independent types, validation, and projection for discrete state histories.",
   "keywords": [
     "timeline",

@@ -5,7 +5,7 @@ React owns the DOM; `@state-explorer/core` validates and projects the data.
 
 ## Installation
 
-**Publication status: 0.1.0 is available on npm.**
+**Available on npm.** [Live demo](https://albertdavletov.github.io/state-explorer/).
 
 Install this package with `@state-explorer/core` for the timeline, full-history
 overview and controlled viewport navigation.
@@ -13,7 +13,7 @@ overview and controlled viewport navigation.
 Install from npm:
 
 ```sh
-npm install @state-explorer/core@0.1.0 @state-explorer/react@0.1.0
+npm install @state-explorer/core @state-explorer/react
 ```
 
 React `^18.0.0 || ^19.0.0` is a peer dependency supplied by your application.
@@ -27,7 +27,7 @@ together in your application so the compatible core dependency resolves from
 the local archive:
 
 ```sh
-npm install /path/to/state-explorer-core-0.1.0.tgz /path/to/state-explorer-react-0.1.0.tgz
+npm install /path/to/state-explorer-core-0.1.1.tgz /path/to/state-explorer-react-0.1.1.tgz
 ```
 
 Your app also needs React and a renderer such as `react-dom` of the same major.
