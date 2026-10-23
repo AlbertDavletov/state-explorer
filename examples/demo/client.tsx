@@ -9,8 +9,7 @@ import "./styles.css";
 function Demo() {
   const [scenario, setScenario] = useState(scenarios[0]!);
   const [viewport, setViewport] = useState<TimeRange>(scenario.viewport);
-  return <main className="demo">
-    <header className="intro"><h1>State Explorer</h1></header>
+  return (
     <div className="showcase" data-demo-preview="">
       <div className="toolbar">
         <label htmlFor="scenario">Explore a scenario
@@ -41,11 +40,7 @@ function Demo() {
       </section>
       <p className="caption">Drag the blue window to move through time; drag its edges to zoom.</p>
     </div>
-    <footer>
-      <a href="https://github.com/AlbertDavletov/state-explorer#quick-start">Quick Start</a>
-      <a href="https://github.com/AlbertDavletov/state-explorer/blob/main/packages/react/README.md">React API</a>
-    </footer>
-  </main>;
+  );
 }
 
 createRoot(document.getElementById("root")!).render(<Demo />);

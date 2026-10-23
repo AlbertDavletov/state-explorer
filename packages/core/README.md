@@ -1,9 +1,13 @@
 # @state-explorer/core
 
-Framework-independent types, time validation and normalized timeline projection.
-No runtime dependencies, React, DOM or pixel coordinates. The `0.1.1` package
-emits ES2022 ESM and TypeScript declarations. For a timeline renderer with an
-overview navigator, use [@state-explorer/react](https://github.com/AlbertDavletov/state-explorer/blob/main/packages/react/README.md).
+State Explorer Core is a framework-independent TypeScript library for validating
+time ranges and projecting discrete state histories onto timelines. Use it as
+the data layer for custom state-history visualizations, or with
+[@state-explorer/react](https://github.com/AlbertDavletov/state-explorer/blob/main/packages/react/README.md)
+for an interactive SVG timeline and full-history overview.
+
+Core has no runtime dependencies, React, DOM or pixel coordinates. The package
+emits ES2022 ESM and TypeScript declarations.
 
 **Available on npm.** [Live demo](https://albertdavletov.github.io/state-explorer/).
 

@@ -19,8 +19,9 @@ before(async () => {
       ["/state-explorer/", ["index.html", "text/html"]],
       ["/state-explorer/timeline.js", ["timeline.js", "text/javascript"]],
       ["/state-explorer/timeline.css", ["timeline.css", "text/css"]],
+      ["/state-explorer/sitemap.xml", ["sitemap.xml", "application/xml"]],
     ]);
-    assert.deepEqual((await readdir(directory)).sort(), ["index.html", "timeline.css", "timeline.js"]);
+    assert.deepEqual((await readdir(directory)).sort(), ["index.html", "sitemap.xml", "timeline.css", "timeline.js"]);
     server = createServer(async (request, response) => {
       const asset = assets.get(new URL(request.url!, "http://localhost").pathname);
       if (!asset) { response.writeHead(404).end(); return; }
@@ -85,6 +86,31 @@ const scenarios = [
   { id: "builds", title: "Build pipelines", first: "Web: Queued", color: "#94a3b8", start: "09:50", count: 16, legend: ["Queued", "Building", "Testing", "Deployed", "Failed"] },
   { id: "devices", title: "Device states", first: "Device A: Online", color: "#387ab5", start: "09:30", count: 10, legend: ["Online", "Offline", "Maintenance"] },
 ];
+
+test("product information, package links and discovery metadata work without JavaScript", async () => {
+  const context = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 360, height: 900 } });
+  const page = await context.newPage();
+  try {
+    assert.equal((await page.goto(demoUrl!))?.status(), 200);
+    assert.equal(await page.getByRole("heading", { level: 1 }).count(), 1);
+    assert.equal(await page.getByRole("heading", { level: 1 }).innerText(), "State Explorer");
+    assert.ok(await page.getByText("Interactive React SVG timelines", { exact: false }).isVisible());
+    assert.ok(await page.getByText("npm install @state-explorer/core @state-explorer/react", { exact: true }).isVisible());
+    assert.match(await page.title(), /React timelines for state histories/);
+    assert.match((await page.locator('meta[name="description"]').getAttribute("content"))!, /state histories/);
+    const canonical = "https://albertdavletov.github.io/state-explorer/";
+    assert.equal(await page.locator('link[rel="canonical"]').getAttribute("href"), canonical);
+    for (const [name, url] of [["Core on npm", "https://www.npmjs.com/package/@state-explorer/core"],
+      ["React on npm", "https://www.npmjs.com/package/@state-explorer/react"],
+      ["GitHub", "https://github.com/AlbertDavletov/state-explorer"]] as const) {
+      assert.equal(await page.getByRole("link", { name, exact: true }).getAttribute("href"), url);
+    }
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+    const sitemap = await page.request.get(new URL("./sitemap.xml", demoUrl!).href);
+    assert.equal(sitemap.status(), 200);
+    assert.ok((await sitemap.text()).includes(`<loc>${canonical}</loc>`));
+  } finally { await context.close(); }
+});
 
 for (const width of [1200, 360]) test(`overview investigation path at ${width}px`, () => fixture(width, async page => {
   const control = (action: string) => page.locator(`[data-navigator-control="${action}"]`);

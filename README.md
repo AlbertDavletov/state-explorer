@@ -2,7 +2,8 @@
 
 **[Live demo](https://albertdavletov.github.io/state-explorer/)**
 
-An embeddable timeline for exploring **entity × time × discrete state**: services
+State Explorer is an embeddable React SVG timeline for exploring
+**entity × time × discrete state**: services
 becoming degraded, builds moving through phases, or devices going offline.
 Your application supplies the entities, state intervals and colors. State Explorer
 aligns their histories on a shared time axis with inspection, zoom, pan and an

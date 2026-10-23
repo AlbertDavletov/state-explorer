@@ -1,11 +1,15 @@
 {
   "name": "@state-explorer/react",
   "version": "0.1.1",
-  "description": "React SVG timelines with a controlled full-history overview navigator and state inspection.",
+  "description": "React SVG timelines for state histories, with a full-history overview, pan, zoom and interval inspection.",
   "keywords": [
+    "state-explorer",
     "react",
-    "timeline",
     "state-history",
+    "state-timeline",
+    "timeline",
+    "state-inspection",
+    "data-visualization",
     "svg"
   ],
   "license": "MIT",
