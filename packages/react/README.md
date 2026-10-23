@@ -1,7 +1,11 @@
 # @state-explorer/react
 
-`StateTimeline` renders discrete state intervals as a responsive SVG timeline.
-React owns the DOM; `@state-explorer/core` validates and projects the data.
+State Explorer for React renders interactive SVG timelines for discrete state
+histories. Explore the full history, move or resize the viewport to pan and zoom,
+and inspect individual state intervals across services, builds or devices.
+
+Your application supplies the entities, state intervals and colors. React owns
+the DOM; `@state-explorer/core` validates and projects the data.
 
 ## Installation
 

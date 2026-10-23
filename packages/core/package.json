@@ -1,10 +1,13 @@
 {
   "name": "@state-explorer/core",
   "version": "0.1.1",
-  "description": "Framework-independent types, validation, and projection for discrete state histories.",
+  "description": "TypeScript core for state-history timelines: time-range validation and interval projection.",
   "keywords": [
-    "timeline",
+    "state-explorer",
     "state-history",
+    "state-timeline",
+    "timeline",
+    "time-intervals",
     "typescript"
   ],
   "license": "MIT",

@@ -69,6 +69,20 @@ Captures go to a temporary directory, outside the deployed output. To check a
 hosted build with fresh browser contexts, set `DEMO_URL` to its URL and run
 `node --import tsx --test packages/react/test/demo.browser.ts`.
 
+## Search visibility
+
+Product text, installation instructions and package links are present in the
+built HTML without JavaScript. The build also emits a descriptive title,
+meta description, canonical URL and `sitemap.xml`; the interactive timeline
+still runs in the browser. Tests check the static content with JavaScript disabled.
+
+To monitor Google indexing, verify the URL-prefix property
+`https://albertdavletov.github.io/state-explorer/` in Search Console, inspect the
+homepage and submit `https://albertdavletov.github.io/state-explorer/sitemap.xml`.
+Ownership verification and submission require the site owner's Google account.
+These discovery hints do not guarantee indexing or a particular search position.
+Package descriptions, keywords and READMEs reach npm only in a subsequent release.
+
 ## Browser checks
 
 ```sh
