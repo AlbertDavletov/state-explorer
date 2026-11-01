@@ -31,7 +31,7 @@ together in your application so the compatible core dependency resolves from
 the local archive:
 
 ```sh
-npm install /path/to/state-explorer-core-0.1.1.tgz /path/to/state-explorer-react-0.1.1.tgz
+npm install /path/to/state-explorer-core-0.1.2.tgz /path/to/state-explorer-react-0.1.2.tgz
 ```
 
 Your app also needs React and a renderer such as `react-dom` of the same major.

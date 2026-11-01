@@ -1,6 +1,6 @@
 {
   "name": "@state-explorer/core",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "TypeScript core for state-history timelines: time-range validation and interval projection.",
   "keywords": [
     "state-explorer",
