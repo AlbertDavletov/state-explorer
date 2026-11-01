@@ -26,7 +26,7 @@ run `npm ci`, `npm run build`, then `npm pack --workspace @state-explorer/core`.
 Install the resulting tarball into your application's directory:
 
 ```sh
-npm install /path/to/state-explorer-core-0.1.1.tgz
+npm install /path/to/state-explorer-core-0.1.2.tgz
 ```
 
 Only package-root ESM imports are supported. Use TypeScript with `NodeNext` or
