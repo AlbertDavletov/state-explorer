@@ -144,10 +144,19 @@ The navigator changes only the controlled viewport.
 Touch the window and drag horizontally to pan immediately; drag either edge to
 resize. Capture keeps the gesture active outside the original selection while
 accepted parent updates re-render both views. Invisible edge targets extend to
-44 CSS pixels where space permits, with separate regions for moving and each
-edge; visible handles retain their original size. At extremely fine supplied
-windows, the central move region can still be subpixel: use detail zoom or the
-keyboard for precise control.
+44 CSS pixels where space permits; visible handles retain their original size.
+Each resize region reaches inward by at most 10px or one sixth of the selection
+width, whichever is smaller. The rest extends outward, leaving at least the
+middle two thirds for moving. Selections of 200, 100, 48 and 24px therefore have
+move regions of 180, 80, 32 and 16px. Mouse and touch use the same regions.
+
+Touch contacts in the central region (including its dividing boundaries) move
+the window, even if a visible handle overlaps that region at very small widths.
+Contacts outside the selection resize the corresponding edge. The action is
+chosen once at contact and stays fixed through movement and parent updates.
+Below 10px, the center has no useful 4–8px finger tolerance: aim outside the
+selection to resize, or use zoom/keyboard controls for precise movement. Subpixel
+windows remain subpixel; the move target does not expand over the resize targets.
 
 The HTML overview wrapper uses `touch-action: pan-y pinch-zoom`: horizontal
 gestures control the navigator, while vertical page scrolling and browser pinch

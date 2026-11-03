@@ -43,6 +43,13 @@ function Fixture() {
     <button onClick={() => setViewport({ start: 499, end: 500 })}>Fine viewport</button>
     <button onClick={() => setDomain({ start: 0, end: 1200 })}>Extend domain</button>
     <label><input type="checkbox" checked={shown} onChange={event => setShown(event.target.checked)} />Show timeline</label>
+    {[200, 100, 48, 24, 8].map(pixels => <button key={pixels} onClick={() => {
+      const plot = document.querySelector("[data-overview-track]")?.getBoundingClientRect().width;
+      if (!plot) return;
+      const duration = Math.min(1, pixels / plot) * (domain.end - domain.start);
+      const center = (domain.start + domain.end) / 2;
+      setViewport({ start: center - duration / 2, end: center + duration / 2 });
+    }}>Window {pixels}px</button>)}
   </main>;
 }
 createRoot(document.getElementById("root")!).render(<StrictMode><Fixture /></StrictMode>);

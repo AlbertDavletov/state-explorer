@@ -112,6 +112,7 @@ export function OverviewNavigator<TEntity extends Entity, TInterval extends Stat
       const x = (event.clientX - bounds.left) * width / bounds.width;
       action = x < left + innerHandle ? "start" : x > right - innerHandle ? "end" : "move";
     }
+    // Resolve once at contact; accepted geometry changes never switch Drag.action.
     event.preventDefault();
     svg.current!.querySelector<SVGRectElement>(`[data-navigator-control="${action}"]`)!.focus({ preventScroll: true });
     svg.current!.setPointerCapture(event.pointerId);
@@ -142,9 +143,10 @@ export function OverviewNavigator<TEntity extends Entity, TInterval extends Stat
     const next = navigateOverview(viewport, domain, action, delta, minimumDuration(measure()));
     if (next) onViewportChange(next);
   };
-  // Reserve the middle third for moving even for subpixel supplied windows.
-  // Expand handles outward to 44px where the SVG has room, without overlap.
-  const innerHandle = Math.min(22, windowWidth / 3);
+  // Keep at least the middle two thirds for moving, with at most 10px of
+  // inward resize reach. Expand the rest outward to 44px where space permits.
+  // The same disjoint regions serve SVG mouse hits and touch coordinates.
+  const innerHandle = Math.min(10, windowWidth / 6);
   const startOutside = Math.min(44 - innerHandle, left);
   const endOutside = Math.min(44 - innerHandle, Math.max(0, width - right));
   const targets = {

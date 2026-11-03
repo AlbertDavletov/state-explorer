@@ -243,6 +243,95 @@ test("subpixel selections keep distinct outside resize targets and a central mov
   await input.dispose();
 }));
 
+test("imprecise contacts keep move and resize intent across 200, 100, 48, 24 and 8px selections", async () => {
+  // A 200px window nearly fills the phone's plot, so exercise that width on
+  // the tablet, with space to move and resize in both directions.
+  for (const layout of [390, 768]) await fixture(layout, async page => {
+    const input = await touch(page);
+    const pixels = (await page.locator("[data-overview-track]").boundingBox())!.width;
+    for (const size of layout === 390 ? [100, 48, 24, 8] : [200, 100, 48, 24, 8]) {
+      const select = async () => {
+        await page.getByRole("button", { name: `Window ${size}px`, exact: true }).evaluate(node => (node as HTMLButtonElement).click());
+        // Read the fill geometry: browser bounding boxes may include its stroke.
+        const box = await control(page, "move").evaluate(node => {
+          const rect = node as SVGRectElement;
+          const bounds = rect.getBBox();
+          const matrix = rect.getScreenCTM()!;
+          return { x: matrix.e + bounds.x * matrix.a, y: matrix.f + bounds.y * matrix.d,
+            width: bounds.width * matrix.a, height: bounds.height * matrix.d };
+        });
+        close(box.width, size);
+        return box;
+      };
+      // Offset the intended central contact by 4–8px, including contacts away
+      // from the exact midpoint. An 8px window has no meaningful finger margin:
+      // only its midpoint is checked as a deterministic fallback, not usability.
+      const offsets = size >= 100 ? [-size / 4 - 8, -8, 8, size / 4 + 8]
+        : size === 48 ? [-12, -8, 8, 12] : size === 24 ? [-6, -4, 4, 6] : [0];
+      const contacts = offsets.map(offset => ({ action: "move", offset, direction: offset < 0 ? -1 : 1 }));
+      // Aim near the visible edge, not the center of its invisible hit box.
+      // On tiny windows prefer the outside: inward error can mean moving.
+      const edgeOffsets = size >= 100 ? [-8, -4, 4, 8] : size === 48 ? [-8, -4, 4] : [-8, -4];
+      for (const offset of edgeOffsets) {
+        contacts.push({ action: "start", offset: -size / 2 + offset, direction: -1 });
+        contacts.push({ action: "end", offset: size / 2 - offset, direction: 1 });
+      }
+      for (const contact of contacts) {
+        const box = await select();
+        const before = await range(page);
+        const x = box.x + box.width / 2 + contact.offset;
+        const y = box.y + box.height / 2 + 4;
+        const requests = await count(page);
+        await input.send("touchStart", x, y);
+        for (let step = 1; step <= 3; step++) {
+          const dx = contact.direction * step * 8;
+          await input.send("touchMove", x + dx, y);
+          const next = await range(page);
+          close(next.start, before.start + (contact.action === "end" ? 0 : dx * 1000 / pixels));
+          close(next.end, before.end + (contact.action === "start" ? 0 : dx * 1000 / pixels));
+          assert.equal(await count(page), requests + step, `${layout}/${size}/${contact.action}/${contact.offset}`);
+        }
+        await input.send("touchEnd");
+      }
+      // The shared SVG regions remain separated as controlled props rerender.
+      await select();
+      const left = (await control(page, "start").boundingBox())!;
+      const right = (await control(page, "end").boundingBox())!;
+      assert.ok(left.x + left.width < right.x);
+      assert.ok(left.width >= 43.9 && right.width >= 43.9);
+    }
+    await input.dispose();
+  });
+});
+
+test("contact action stays fixed when accepted geometry moves another target under the finger", () => fixture(768, async page => {
+  const input = await touch(page);
+  const pixels = (await page.locator("[data-overview-track]").boundingBox())!.width;
+  const select = (size: number) => page.getByRole("button", { name: `Window ${size}px`, exact: true })
+    .evaluate(node => (node as HTMLButtonElement).click());
+  for (const action of ["move", "start", "end"]) {
+    await select(48);
+    const start = await point(page, action);
+    const direction = action === "start" ? -1 : 1;
+    await input.send("touchStart", start.x, start.y);
+    await input.send("touchMove", start.x + direction * 8, start.y);
+    // Move contact is now outside the small selection; resize contacts are
+    // inside the wide selection's move region. Capture must retain the intent.
+    await select(action === "move" ? 8 : 200);
+    for (let step = 2; step <= 4; step++) {
+      const before = await range(page);
+      const requests = await count(page);
+      await input.send("touchMove", start.x + direction * step * 8, start.y);
+      const next = await range(page);
+      close(next.start, before.start + (action === "end" ? 0 : direction * 8000 / pixels));
+      close(next.end, before.end + (action === "start" ? 0 : direction * 8000 / pixels));
+      assert.equal(await count(page), requests + 1);
+    }
+    await input.send("touchEnd");
+  }
+  await input.dispose();
+}));
+
 test("horizontal navigator gestures avoid page scrolling; vertical gestures scroll on controls, background and detail", () => fixture(390, async page => {
   const input = await touch(page);
   let start = await point(page, "move");
