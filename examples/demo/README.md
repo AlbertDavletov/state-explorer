@@ -98,7 +98,15 @@ npm run test:browser
 ```
 
 Checks cover scenario switching, viewport ownership, both navigator edges,
-inspection and keyboard behavior at wide and narrow widths. See the
+inspection and keyboard behavior at wide and narrow widths. The mobile suite
+uses Chromium `hasTouch`/`isMobile` contexts and native CDP touch input at 360,
+390, 768 and 1200px. It checks continuous drag/resize updates, controlled parents,
+cancellation/recovery, vertical scrolling and persistent tap inspection. This is
+emulation; physical Android Chrome and iOS Safari testing remains pending.
+If WebKit is installed (`npx playwright install webkit`), the suite also runs
+mobile tap inspection and mouse/keyboard navigator checks in that engine.
+Continuous native touch gestures use Chromium CDP; WebKit checks do not validate
+iOS Safari touch dragging. See the
 [accessibility and rendering limits](../../packages/react/README.md#accessibility-and-limits).
 
 ## Refresh the README recording

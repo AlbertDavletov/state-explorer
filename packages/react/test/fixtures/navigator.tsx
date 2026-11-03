@@ -16,6 +16,7 @@ function Fixture() {
   const [domain, setDomain] = useState({ start: 0, end: 1000 });
   const [mode, setMode] = useState("accept");
   const [enabled, setEnabled] = useState(true);
+  const [shown, setShown] = useState(true);
   const [request, setRequest] = useState<TimeRange | null>(null);
   const [requests, setRequests] = useState(0);
   const change = (next: TimeRange) => {
@@ -26,9 +27,9 @@ function Fixture() {
   return <main style={{ margin: 20 }}>
     <button>Before timeline</button>
     <section aria-label="Timeline container" style={{ width: 900, maxWidth: "100%" }}>
-      <StateTimeline entities={entities} intervals={intervals} domain={domain} viewport={viewport}
+      {shown && <StateTimeline entities={entities} intervals={intervals} domain={domain} viewport={viewport}
         {...(enabled ? { onViewportChange: change } : {})}
-        label="Navigator fixture" getStateAppearance={interval => ({ fill: "#167d73", label: interval.state })} />
+        label="Navigator fixture" getStateAppearance={interval => ({ fill: "#167d73", label: interval.state })} />}
     </section>
     <button>After timeline</button>
     <output aria-label="Viewport" data-start={viewport.start} data-end={viewport.end} />
@@ -41,6 +42,14 @@ function Fixture() {
     <button onClick={() => setViewport({ start: 100, end: 300 })}>External viewport</button>
     <button onClick={() => setViewport({ start: 499, end: 500 })}>Fine viewport</button>
     <button onClick={() => setDomain({ start: 0, end: 1200 })}>Extend domain</button>
+    <label><input type="checkbox" checked={shown} onChange={event => setShown(event.target.checked)} />Show timeline</label>
+    {[200, 100, 48, 24, 8].map(pixels => <button key={pixels} onClick={() => {
+      const plot = document.querySelector("[data-overview-track]")?.getBoundingClientRect().width;
+      if (!plot) return;
+      const duration = Math.min(1, pixels / plot) * (domain.end - domain.start);
+      const center = (domain.start + domain.end) / 2;
+      setViewport({ start: center - duration / 2, end: center + duration / 2 });
+    }}>Window {pixels}px</button>)}
   </main>;
 }
 createRoot(document.getElementById("root")!).render(<StrictMode><Fixture /></StrictMode>);
