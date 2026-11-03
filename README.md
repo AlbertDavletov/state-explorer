@@ -122,9 +122,13 @@ It requires registry access or cached dependencies; it does not publish.
 
 ## Limits
 
-Packages emit ES2022 ESM for modern browsers, without polyfills. Other browser
-engines, real screen readers, physical touch and large-data performance remain
-unvalidated. Overlaps paint in input order; tiny pointer targets, clipped labels
+Packages emit ES2022 ESM for modern browsers, without polyfills. Real screen
+readers, physical touch and large-data performance remain unvalidated.
+Chromium mobile emulation tests continuous single-finger overview
+movement/resizing, vertical scrolling and tap inspection; this is not
+physical-device validation. Optional WebKit checks cover tap inspection and
+mouse/keyboard navigation. Other browser coverage remains incomplete.
+Overlaps paint in input order; tiny pointer targets, clipped labels
 and tooltip edge/overflow clipping remain limitations. See the
 [React contracts and limits](packages/react/README.md#accessibility-and-limits).
 There is no aggregation, virtualization, touch-pinch navigation or data backend.

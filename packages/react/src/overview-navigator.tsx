@@ -34,13 +34,13 @@ export function OverviewNavigator<TEntity extends Entity, TInterval extends Stat
   const instructionId = useId();
   const [focused, setFocused] = useState<NavigatorAction | null>(null);
   const keyboardFocus = useRef(true);
-  type Drag = { id: number; action: NavigatorAction; x: number; pixels: number;
-    domainStart: number; domainEnd: number; width: number };
+  type Drag = { id: number; action: NavigatorAction; x: number; pixels: number; capture: SVGSVGElement;
+    domainStart: number; domainEnd: number; width: number; plotWidth: number };
   const drag = useRef<Drag | null>(null);
   const cancel = () => {
     const current = drag.current;
     drag.current = null;
-    if (current && svg.current?.hasPointerCapture(current.id)) svg.current.releasePointerCapture(current.id);
+    if (current?.capture.hasPointerCapture(current.id)) current.capture.releasePointerCapture(current.id);
   };
   useEffect(() => {
     cancel();
@@ -50,7 +50,7 @@ export function OverviewNavigator<TEntity extends Entity, TInterval extends Stat
     // previous :focus-visible match, including when clicking the same control.
     const pointer = () => { keyboardFocus.current = false; setFocused(null); };
     const keyboard = (event: globalThis.KeyboardEvent) => {
-      if (event.key === "Escape") cancel();
+      if (event.key === "Escape" || event.key === "Tab") cancel();
       if (event.altKey || event.ctrlKey || event.metaKey) return;
       keyboardFocus.current = true;
       const active = document.activeElement;
@@ -58,10 +58,19 @@ export function OverviewNavigator<TEntity extends Entity, TInterval extends Stat
       if (active && svg.current?.contains(active) && action && modes.includes(action)) setFocused(action);
     };
     window.addEventListener("blur", cancel);
+    const node = svg.current!;
+    // Measure once at contact, then only on actual layout changes. Subpixel
+    // rounding must not cancel an otherwise stable controlled drag.
+    const observer = new ResizeObserver(() => {
+      const current = drag.current;
+      if (current && Math.abs(current.pixels - current.plotWidth * node.getBoundingClientRect().width / current.width) > 0.5) cancel();
+    });
+    observer.observe(node);
     document.addEventListener("pointerdown", pointer, true);
     document.addEventListener("keydown", keyboard, true);
     return () => {
       cancel();
+      observer.disconnect();
       window.removeEventListener("blur", cancel);
       document.removeEventListener("pointerdown", pointer, true);
       document.removeEventListener("keydown", keyboard, true);
@@ -94,20 +103,27 @@ export function OverviewNavigator<TEntity extends Entity, TInterval extends Stat
   const begin = (event: PointerEvent<SVGRectElement>, action: NavigatorAction) => {
     if (!onViewportChange || drag.current || !event.isPrimary || event.button !== 0
       || event.ctrlKey || event.metaKey || event.altKey) return;
-    const pixels = measure();
+    const bounds = svg.current!.getBoundingClientRect();
+    const pixels = width > 0 ? plotWidth * bounds.width / width : 0;
     if (pixels <= 0) return;
+    if (event.pointerType === "touch") {
+      // SVG hit testing may snap a subpixel window's center onto an edge.
+      // Resolve the disjoint regions from the contact, not the rounded hit.
+      const x = (event.clientX - bounds.left) * width / bounds.width;
+      action = x < left + innerHandle ? "start" : x > right - innerHandle ? "end" : "move";
+    }
     event.preventDefault();
-    event.currentTarget.focus();
+    svg.current!.querySelector<SVGRectElement>(`[data-navigator-control="${action}"]`)!.focus({ preventScroll: true });
     svg.current!.setPointerCapture(event.pointerId);
-    drag.current = { id: event.pointerId, action, x: event.clientX, pixels,
-      domainStart: domain.start, domainEnd: domain.end, width };
+    drag.current = { id: event.pointerId, action, x: event.clientX, pixels, capture: svg.current!,
+      domainStart: domain.start, domainEnd: domain.end, width, plotWidth };
   };
   const move = (event: PointerEvent<SVGSVGElement>) => {
     const current = drag.current;
     if (!current || current.id !== event.pointerId) return;
     if (!onViewportChange || !event.currentTarget.hasPointerCapture(current.id)
-      || current.width !== width || current.domainStart !== domain.start || current.domainEnd !== domain.end
-      || current.pixels !== measure()) { cancel(); return; }
+      || current.width !== width || current.plotWidth !== plotWidth
+      || current.domainStart !== domain.start || current.domainEnd !== domain.end) { cancel(); return; }
     const delta = (event.clientX - current.x) / current.pixels;
     current.x = event.clientX;
     const next = navigateOverview(viewport, domain, current.action, delta, minimumDuration(current.pixels));
@@ -126,14 +142,21 @@ export function OverviewNavigator<TEntity extends Entity, TInterval extends Stat
     const next = navigateOverview(viewport, domain, action, delta, minimumDuration(measure()));
     if (next) onViewportChange(next);
   };
-  // Handles retain separate outside hit areas even for a very narrow supplied window.
-  const innerHandle = Math.min(12, windowWidth / 3);
+  // Reserve the middle third for moving even for subpixel supplied windows.
+  // Expand handles outward to 44px where the SVG has room, without overlap.
+  const innerHandle = Math.min(22, windowWidth / 3);
+  const startOutside = Math.min(44 - innerHandle, left);
+  const endOutside = Math.min(44 - innerHandle, Math.max(0, width - right));
   const targets = {
     move: { x: left, width: windowWidth },
-    start: { x: left - 12, width: 12 + innerHandle },
-    end: { x: right - innerHandle, width: 12 + innerHandle },
+    start: { x: left - startOutside, width: startOutside + innerHandle },
+    end: { x: right - innerHandle, width: endOutside + innerHandle },
   };
-  return <div style={{ position: "relative", marginTop: 8 }}>
+  // SVG shape touch-action is not consistently honored by gesture arbitration.
+  // Use a CSS box ancestor: horizontal gestures belong to us, vertical scroll
+  // and browser pinch zoom remain available, including over the controls.
+  return <div style={{ position: "relative", marginTop: 8,
+    touchAction: onViewportChange ? "pan-y pinch-zoom" : "auto", userSelect: "none", WebkitUserSelect: "none" }}>
     {/* Chromium can omit aria-valuetext on SVG sliders; descriptions retain readable current values. */}
     {modes.map(action => <span key={action} id={`${instructionId}-${action}`} style={hidden}>
       Current value: {valueText(action)}.
@@ -177,8 +200,8 @@ export function OverviewNavigator<TEntity extends Entity, TInterval extends Stat
         aria-valuetext={valueText(action)}
         fill={action === "move" ? "#2563eb" : "transparent"} fillOpacity={action === "move" ? 0.08 : 1}
         stroke={action === "move" ? "#1d4ed8" : "none"} strokeWidth={2}
-        style={{ outline: "none", touchAction: "none", cursor: !onViewportChange ? "default" : action === "move" ? "grab" : "ew-resize" }}
-        onFocus={() => setFocused(keyboardFocus.current ? action : null)} onBlur={() => { setFocused(null); cancel(); }}
+        style={{ outline: "none", cursor: !onViewportChange ? "default" : action === "move" ? "grab" : "ew-resize" }}
+        onFocus={() => setFocused(keyboardFocus.current ? action : null)} onBlur={() => setFocused(null)}
         onPointerDown={event => begin(event, action)} onKeyDown={event => keyDown(event, action)} />)}
       <g aria-hidden="true" pointerEvents="none">
         {[left, right].map((x, index) => <g key={index}>

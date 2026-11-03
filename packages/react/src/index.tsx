@@ -59,7 +59,8 @@ export function StateTimeline<TEntity extends Entity, TInterval extends StateInt
     const x = (clientX - bounds.left) * width / bounds.width;
     const y = (clientY - bounds.top) * height / bounds.height;
     return { position: Math.max(0, Math.min(1, (x - labelWidth) / plotWidth)),
-      inside: x >= labelWidth && x <= toX(1) && y >= top && y <= height - 12 };
+      inside: x >= labelWidth && x <= toX(1) && y >= top && y <= height - 12,
+      rowIndex: Math.floor((y - top) / rowHeight) };
   };
   useEffect(() => {
     if (!onViewportChange || plotWidth <= 0) return;
@@ -102,6 +103,10 @@ export function StateTimeline<TEntity extends Entity, TInterval extends StateInt
     && a.interval === b.interval && a.index === b.index;
   const [hovered, setHovered] = useState<Target | null>(null);
   const [focused, setFocused] = useState<Target | null>(null);
+  // Touch inspection must survive focus moving into the tooltip itself.
+  const [touchInspection, setTouchInspection] = useState<Target | null>(null);
+  const touchInput = useRef(false);
+  const tap = useRef<{ id: number; x: number; y: number; target: Target } | null>(null);
   // undefined chooses the initial entry; null deliberately retains the chart fallback.
   const [tabTarget, setTabTarget] = useState<Target | null>();
   const ownsFocus = useRef(false);
@@ -110,15 +115,37 @@ export function StateTimeline<TEntity extends Entity, TInterval extends StateInt
   useEffect(() => {
     // Capture modality before native or programmatic SVG focus changes. Keep
     // inspection focus intact; only its visual indicator depends on modality.
-    const pointer = () => setKeyboardFocus(false);
+    const pointer = (event: PointerEvent) => {
+      setKeyboardFocus(false);
+      touchInput.current = event.pointerType === "touch";
+      tap.current = null;
+      if (touchInput.current) {
+        // A tap inside the tooltip may select its text. Anywhere else dismisses
+        // touch inspection; a completed interval tap below can open it again.
+        if (!(event.target instanceof Node) || !tooltipRef.current?.contains(event.target)) {
+          setTouchInspection(null); setHovered(null); setDismissed(true);
+        }
+      } else setTouchInspection(null);
+    };
     const keyboard = (event: KeyboardEvent) => {
-      if (!event.altKey && !event.ctrlKey && !event.metaKey) setKeyboardFocus(true);
+      if (!event.altKey && !event.ctrlKey && !event.metaKey) {
+        touchInput.current = false; setTouchInspection(null); setKeyboardFocus(true);
+      }
+    };
+    const interrupt = () => {
+      tap.current = null;
+      if (touchInput.current) { setTouchInspection(null); setHovered(null); setDismissed(true); }
     };
     document.addEventListener("pointerdown", pointer, true);
     document.addEventListener("keydown", keyboard, true);
+    document.addEventListener("scroll", interrupt, true);
+    window.addEventListener("blur", interrupt);
     return () => {
+      tap.current = null;
       document.removeEventListener("pointerdown", pointer, true);
       document.removeEventListener("keydown", keyboard, true);
+      document.removeEventListener("scroll", interrupt, true);
+      window.removeEventListener("blur", interrupt);
     };
   }, []);
   const [dismissed, setDismissed] = useState(false);
@@ -131,6 +158,7 @@ export function StateTimeline<TEntity extends Entity, TInterval extends StateInt
   // Source collections may change on any render. Clear only identities no longer present.
   useEffect(() => {
     if (hovered && !resolve(hovered)) setHovered(null);
+    if (touchInspection && !resolve(touchInspection)) setTouchInspection(null);
     if (tabTarget && !resolve(tabTarget)) setTabTarget(null);
     if (focused && !resolve(focused)) {
       setFocused(null);
@@ -140,7 +168,7 @@ export function StateTimeline<TEntity extends Entity, TInterval extends StateInt
     }
   });
   // Keep only source identities in interaction state; derive content from current props.
-  const inspected = resolve(hovered) ?? resolve(focused);
+  const inspected = resolve(hovered) ?? resolve(touchInspection) ?? resolve(focused);
   const active = dismissed || !inspected?.segment ? null : inspected;
   const activeAppearance = active?.interval && getStateAppearance(active.interval, active.entity);
   const hasActive = active !== null;
@@ -152,16 +180,17 @@ export function StateTimeline<TEntity extends Entity, TInterval extends StateInt
     document.addEventListener("keydown", dismiss);
     return () => document.removeEventListener("keydown", dismiss);
   }, [hasActive]);
-  const focusEntry = (entry: (typeof entries)[number][number] | undefined) => {
+  const focusEntry = (entry: (typeof entries)[number][number] | undefined, preventScroll = false) => {
     if (!entry) return;
     const node = entry.interval
       ? svgRef.current?.querySelector<SVGElement>(`[data-source-index="${entry.index}"]`)
       : svgRef.current?.querySelector<SVGElement>(`[data-empty-row="${entry.rowIndex}"]`);
-    node?.focus();
+    node?.focus({ preventScroll });
   };
   const focusTarget = (target: Target) => {
     const source = { entity: target.entity, interval: target.interval, index: target.index };
-    setFocused(source); setTabTarget(source); setHovered(null); setDismissed(false);
+    setFocused(source); setTabTarget(source); setHovered(null);
+    if (!touchInput.current) setDismissed(false);
   };
   const focusEntryNow = resolve(focused);
   const instructions = `Viewport ${accessibleTime(viewport.start)} to ${accessibleTime(viewport.end)}; end exclusive. ${rows.length ? `${rows.length} entities.` : "No entities."} Left and Right: intervals in input order. Up and Down: previous or next row, first interval. Home and End: first or last interval in row. Tab: leave timeline. Escape: dismiss inspection.`
@@ -215,6 +244,47 @@ export function StateTimeline<TEntity extends Entity, TInterval extends StateInt
       }}
       onBlur={() => setChartFocused(false)}
       onKeyDown={handleKeyDown}
+      onPointerDown={event => {
+        if (event.pointerType !== "touch" || !event.isPrimary || event.button !== 0) return;
+        const point = pointerPosition(event.clientX, event.clientY);
+        if (!point?.inside) return;
+        const row = entries[point.rowIndex];
+        const sourceIndex = (event.target as Element).getAttribute("data-source-index");
+        const direct = sourceIndex === null ? null : row?.find(entry => entry.index === Number(sourceIndex));
+        // Preserve painted hit precedence. In gaps, allow a 12 CSS-pixel reach
+        // to short intervals without widening marks or overlapping SVG targets.
+        const pixels = plotWidth * svgRef.current!.getBoundingClientRect().width / width;
+        let nearest = direct;
+        let distance = 12 / pixels;
+        if (!direct) for (const entry of row ?? []) {
+          if (!entry.segment) continue;
+          const next = Math.max(entry.segment.xStart - point.position, point.position - entry.segment.xEnd, 0);
+          if (next <= distance) { nearest = entry; distance = next; }
+        }
+        if (nearest?.interval) {
+          // Suppress compatibility mouse focus after pointerup; it could move
+          // focus away from a nearby short mark. Native scrolling stays enabled.
+          event.preventDefault();
+          tap.current = { id: event.pointerId, x: event.clientX, y: event.clientY,
+            target: { entity: nearest.entity, interval: nearest.interval, index: nearest.index } };
+        }
+      }}
+      onPointerMove={event => {
+        const current = tap.current;
+        if (current?.id === event.pointerId && Math.hypot(event.clientX - current.x, event.clientY - current.y) > 8) tap.current = null;
+      }}
+      onPointerUp={event => {
+        const current = tap.current;
+        if (current?.id !== event.pointerId) return;
+        tap.current = null;
+        const entry = resolve(current.target);
+        if (Math.hypot(event.clientX - current.x, event.clientY - current.y) > 8 || !entry) return;
+        focusEntry(entry, true);
+        setTouchInspection(current.target);
+        setFocused(current.target); setHovered(null); setDismissed(false); setTabTarget(current.target);
+      }}
+      onPointerCancel={() => { tap.current = null; }}
+      onLostPointerCapture={() => { tap.current = null; }}
       viewBox={width > 0 ? `0 0 ${width} ${height}` : undefined} role="group" aria-label={label}
       fontFamily="system-ui, sans-serif" fontSize={13}
       style={{ outline: "none", display: "block", visibility: width > 0 ? "visible" : "hidden", background: "white", color: "#243247" }}>
@@ -252,10 +322,12 @@ export function StateTimeline<TEntity extends Entity, TInterval extends StateInt
                 data-source-index={sourceIndex} tabIndex={same(tabEntry, target) ? 0 : -1}
                 style={{ outline: "none" }}
                 aria-label={`${row.entity.label}: ${appearance.label}; original start ${accessibleTime(segment.interval.start)}; end ${accessibleTime(segment.interval.end)}, exclusive`}
-                onPointerEnter={() => {
+                onPointerEnter={event => {
+                  if (event.pointerType === "touch") return;
                   setHovered({ entity: target.entity, interval: target.interval, index: target.index }); setDismissed(false);
                 }}
                 onPointerLeave={event => {
+                  if (event.pointerType === "touch") return;
                   if (!(event.relatedTarget instanceof Node) || !tooltipRef.current?.contains(event.relatedTarget)) {
                     setHovered(null);
                   }

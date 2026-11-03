@@ -136,9 +136,25 @@ Every pointer delta uses the latest supplied viewport. Rejection leaves both
 views unchanged; transformed or externally updated values become the baseline
 for the next delta. An asynchronous parent may accept less movement than an
 immediately updating parent; immediate updates are recommended for continuous dragging.
-Escape, lost capture, pointer cancellation, blur, domain/size changes or removing
+Escape, Tab, lost capture, pointer cancellation, window blur, domain/size changes or removing
 navigation stop the drag. Accepted changes remain; cancellation does not request
-an undo. The navigator changes only the controlled viewport.
+an undo. Moving keyboard focus alone does not end a captured pointer gesture.
+The navigator changes only the controlled viewport.
+
+Touch the window and drag horizontally to pan immediately; drag either edge to
+resize. Capture keeps the gesture active outside the original selection while
+accepted parent updates re-render both views. Invisible edge targets extend to
+44 CSS pixels where space permits, with separate regions for moving and each
+edge; visible handles retain their original size. At extremely fine supplied
+windows, the central move region can still be subpixel: use detail zoom or the
+keyboard for precise control.
+
+The HTML overview wrapper uses `touch-action: pan-y pinch-zoom`: horizontal
+gestures control the navigator, while vertical page scrolling and browser pinch
+zoom remain available, including over the controls. A vertical gesture may
+cancel a drag; accepted changes remain. The detail view and page outside the
+overview retain normal browser touch scrolling. Navigator text cannot be
+selected during dragging. Browser pinch zoom does not change the timeline range.
 
 After the detail's roving Tab stop, Tab visits **Move viewport**, **Resize viewport
 start**, and **Resize viewport end**, then leaves the component. Each is a named
@@ -163,17 +179,23 @@ application-owned.
 
 | Action | Pointer | Keyboard, while focus is inside the timeline |
 | --- | --- | --- |
-| Inspect | Hover an interval; the tooltip is hoverable. | Tab enters a remembered stop. Left/Right follows source order within a row; Home/End reaches its first/last interval. |
+| Inspect | Hover an interval; the tooltip is hoverable. On touch, tap to keep inspection open, or tap another interval to switch. | Tab enters a remembered stop. Left/Right follows source order within a row; Home/End reaches its first/last interval. |
 | Change row | Hover another row's interval. | Up/Down reaches the adjacent row's first interval or its empty-row entry; no wrapping. |
 | Zoom | Wheel up/down, anchored at the pointer. | `+`/`=` in, `-` out, anchored at the center. |
 | Pan | Shift+wheel; positive delta moves later. | Shift+Left/Right moves earlier/later by 10% of the viewport. |
-| Dismiss | Escape dismisses inspection. | Escape dismisses inspection; Tab/Shift+Tab leaves the detail. |
+| Dismiss | Touch outside the tooltip or scroll to dismiss touch inspection. | Escape dismisses inspection; Tab/Shift+Tab leaves the detail. |
 
 Only plot-row wheel gestures are handled. Labels, axis, margins, tooltips and
 Ctrl/Meta/Alt-modified wheel input retain browser behavior. Zoom-in stops at one
 millisecond; smaller supplied ranges still render and can pan/zoom out. Unsafe,
 collapsed or unchanged navigation proposals are ignored. Dedicated touch-pinch
 interactions are not implemented. Overview pointer/keyboard controls are described above.
+
+Touch inspection opens only after a tap, not during a scroll or drag. In gaps,
+taps within 12 CSS pixels of an interval can inspect it, helping isolated short
+marks without widening their visual geometry. Direct hits retain paint-order
+precedence; dense or overlapping subpixel intervals still need zoom or keyboard
+inspection. Touch focus does not paint keyboard focus indicators.
 
 ## Accessibility and limits
 
@@ -214,5 +236,11 @@ is provided. Tiny intervals are keyboard-inspectable; pointer geometry stays tru
 errors propagate; see the [core contract](https://github.com/AlbertDavletov/state-explorer/blob/main/packages/core/README.md).
 
 Implementation math and formatting helpers are internal, not package entry points.
-Physical touch and large-data performance remain unvalidated; no performance or
-cross-browser support guarantees are provided. Licensed under [MIT](LICENSE).
+Chromium mobile emulation (`hasTouch`/`isMobile`) and native CDP touch sequences
+cover continuous movement and resizing at 360, 390, 768 and 1200px, controlled
+updates, interruptions, scrolling and tap inspection. These are browser input
+tests, not physical-device validation. When Playwright WebKit is installed, the
+suite also checks mobile taps/inspection and mouse/keyboard navigator behavior;
+continuous native touch drags are tested only in Chromium. Android Chrome and
+iOS Safari on physical devices and large-data performance remain unvalidated;
+no performance or cross-browser support guarantees are provided. Licensed under [MIT](LICENSE).

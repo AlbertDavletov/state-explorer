@@ -12,7 +12,7 @@ before(async () => {
   await build({ entryPoints: [fileURLToPath(new URL("./fixtures/navigator.tsx", import.meta.url))],
     outfile: fileURLToPath(new URL("navigator.js", directory)), bundle: true, platform: "browser",
     define: { "process.env.NODE_ENV": '"development"' } });
-  await writeFile(new URL("navigator.html", directory), '<!doctype html><html lang="en"><body><div id="root"></div><script src="navigator.js"></script></body></html>');
+  await writeFile(new URL("navigator.html", directory), '<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body><div id="root"></div><script src="navigator.js"></script></body></html>');
   browser = await chromium.launch({ ...(process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {}) });
 });
 after(async () => { await browser?.close(); });
@@ -223,6 +223,27 @@ test("Escape, blur, capture loss, pointer cancellation, resize, domain change an
     assert.equal(await count(page), requests, reason);
     assert.deepEqual(await range(page), accepted, reason);
   }
+}));
+
+test("moving keyboard focus away does not cancel a captured mouse drag; Tab and Escape still stop it", () => fixture(async page => {
+  const pixels = (await page.locator("[data-overview-track]").boundingBox())!.width;
+  const point = await begin(page, "move");
+  await page.mouse.move(point.x + 10, point.y);
+  await page.getByRole("button", { name: "After timeline" }).focus();
+  await page.mouse.move(point.x + 20, point.y);
+  close((await range(page)).start, 200 + 20000 / pixels);
+  await page.keyboard.press("Tab");
+  const requests = await count(page);
+  await page.mouse.move(point.x + 30, point.y);
+  await page.mouse.up();
+  assert.equal(await count(page), requests);
+  const again = await begin(page, "move");
+  await page.getByRole("button", { name: "After timeline" }).focus();
+  await page.keyboard.press("Escape");
+  const stopped = await count(page);
+  await page.mouse.move(again.x + 10, again.y);
+  await page.mouse.up();
+  assert.equal(await count(page), stopped);
 }));
 
 test("finer parent viewports remain accurate, separately focusable and usable; disabled overview emits nothing", () => fixture(async page => {
